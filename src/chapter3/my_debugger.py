@@ -3,6 +3,7 @@ from my_debugger_defines import *
 
 kernel32 = windll.kernel32
 
+
 class debugger():
     def __init__(self):
         self.h_process = None
@@ -24,7 +25,7 @@ class debugger():
         # to be shown as a separate window. This also illustrates
         # how different settings in the STARTUPINFO struct can affect 
         # the debugger.
-        startupinfo.dwFlags     = 0x01
+        startupinfo.dwFlags = 0x01
         startupinfo.wShowWindow = 0x00
 
         # We then initialize the cb variable in the STARTUPINFO struct
@@ -32,28 +33,28 @@ class debugger():
         startupinfo.cb = sizeof(startupinfo)
 
         if kernel32.CreateProcessA(path_to_exe,
-                    None,
-                    None,
-                    None,
-                    None,
-                    creation_flags,
-                    None,
-                    None,
-                    byref(startupinfo),
-                    byref(process_information)):
+                                   None,
+                                   None,
+                                   None,
+                                   None,
+                                   creation_flags,
+                                   None,
+                                   None,
+                                   byref(startupinfo),
+                                   byref(process_information)):
 
             print "[*] We have successfully launched the process!"
             print "[*] PID: %d" % process_information.dwProcessId
 
             # Obtain a valid handle for the newly created process
             # and store it for future access
-            self.h_process = self.open_process(self, process_information.dwProcessId)
+            self.h_process = self.open_process(process_information.dwProcessId)
 
         else:
             print "[*] Error: 0x%08x." % kernel32.GetLastError()
 
-    def open_process(self,pid):
-        h_process = kernel32.OpenProcess(PROCESS_ALL_ACCESS,False,pid)
+    def open_process(self, pid):
+        h_process = kernel32.OpenProcess(PROCESS_ALL_ACCESS, False, pid)
         return h_process
 
     def attach(self, pid):
@@ -62,15 +63,15 @@ class debugger():
         # We attempt to attach to the process
         # if this fails we exit the call
         if kernel32.DebugActiveProcess(pid):
-            self.debugger_active    = True
-            self.pid                = int(pid)
-        
+            self.debugger_active = True
+            self.pid = int(pid)
+
         else:
             print "[*] Unable to attach to the process."
 
     def run(self):
         # Now we have to poll the debugger for
-        # debuggin events
+        # debugging events
 
         while self.debugger_active == True:
             self.get_debug_event()
@@ -78,16 +79,15 @@ class debugger():
     def get_debug_event(self):
 
         debug_event = DEBUG_EVENT()
-        continue_status= DBG_CONTINUE
+        continue_status = DBG_CONTINUE
 
-        if kernel32.WaitForDebugEvent(byref(debug_event),INFINITE):
-            
+        if kernel32.WaitForDebugEvent(byref(debug_event), INFINITE):
             raw_input("Press a key to continue...")
             self.debugger_active = False
-            kernel32.ContinueDebugEvent( \
-                debug_event.dwProcessId, \
-                debug_event.dwThreadId, \
-                continue_status )
+            kernel32.ContinueDebugEvent(
+                debug_event.dwProcessId,
+                debug_event.dwThreadId,
+                continue_status)
 
     def detach(self):
         if kernel32.DebugActiveProcessStop(self.pid):
